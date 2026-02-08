@@ -18,11 +18,15 @@ interface AgentResult {
 /**
  * Mock Claude Response - Pattern matching based agent
  * @param userMessage - Message from the user
+ * @param tasksList - Optional task list (from client; falls back to getTasks for client-side usage)
  * @returns Agent response with optional tool calls
  */
-export async function mockClaudeResponse(userMessage: string): Promise<AgentResult> {
+export async function mockClaudeResponse(
+  userMessage: string,
+  tasksList?: Array<{ id: string; title: string; completed: boolean; createdAt: number }>
+): Promise<AgentResult> {
   const message = userMessage.toLowerCase().trim();
-  const tasks = getTasks();
+  const tasks = tasksList !== undefined ? tasksList : getTasks();
 
   // ===== HELPER FUNCTIONS =====
 
@@ -81,6 +85,44 @@ export async function mockClaudeResponse(userMessage: string): Promise<AgentResu
         toolCalls: []
       };
     }
+  }
+
+  // ===== INTENT: CLEAR COMPLETED TASKS ===== (checked before COMPLETE TASK because it's more specific)
+  if (
+    message.includes('clear') ||
+    message.includes('delete all') ||
+    message.includes('remove all')
+  ) {
+    // Check if user wants to clear completed tasks specifically
+    if (message.includes('completed') || message.includes('done')) {
+      const completedTasks = tasks.filter(t => t.completed);
+
+      if (completedTasks.length === 0) {
+        return {
+          response: "You don't have any completed tasks to clear.",
+          toolCalls: []
+        };
+      }
+
+      // Create multiple delete_task calls
+      const toolCalls = completedTasks.map(task => ({
+        name: 'delete_task',
+        input: { task_id: task.id }
+      }));
+
+      const remaining = tasks.length - completedTasks.length;
+
+      return {
+        response: `✓ Cleared ${completedTasks.length} completed task${completedTasks.length === 1 ? '' : 's'}. You have ${remaining} task${remaining === 1 ? '' : 's'} remaining.`,
+        toolCalls
+      };
+    }
+
+    // User said "clear" but not "completed" - ask for clarification
+    return {
+      response: "What would you like to clear? (e.g., 'Clear all completed tasks')",
+      toolCalls: []
+    };
   }
 
   // ===== INTENT: COMPLETE TASK =====

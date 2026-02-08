@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { getTasks, saveTasks } from '@/lib/tasks';
 
 interface Message {
   id: string;
@@ -41,11 +42,15 @@ export default function AgentPage() {
     setLoading(true);
 
     try {
-      // Send message to agent API
+      // Send message to agent API (including current tasks)
+      const tasks = getTasks();
       const response = await fetch('/api/claude/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage.content })
+        body: JSON.stringify({
+          message: userMessage.content,
+          tasks
+        })
       });
 
       if (!response.ok) {
@@ -53,6 +58,11 @@ export default function AgentPage() {
       }
 
       const data = await response.json();
+
+      // If tasks were updated by the agent, save them to localStorage
+      if (data.tasks && Array.isArray(data.tasks)) {
+        saveTasks(data.tasks);
+      }
 
       // Add assistant response
       const assistantMessage: Message = {
