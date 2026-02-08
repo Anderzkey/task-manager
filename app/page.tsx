@@ -39,11 +39,22 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Tasks</h1>
-        <p className="text-gray-600 mb-6">Get stuff done</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Tasks</h1>
+            <p className="text-gray-600">Get stuff done</p>
+          </div>
+          <a
+            href="/agent"
+            className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium whitespace-nowrap"
+            title="Chat with Claude to manage tasks"
+          >
+            💬 Chat
+          </a>
+        </div>
 
         {/* Add Task Form */}
-        <form onSubmit={handleAdd} className="mb-6">
+        <form onSubmit={handleAdd} className="mb-6 mt-6">
           <div className="flex gap-2">
             <input
               type="text"
